@@ -1,6 +1,6 @@
-# Drug Retargeting GUI
+# Drug Retargeting 
 
-Drug Retargeting GUI is a Python application that provides a Graphical User Interface (GUI) for analyzing drug-protein interactions and identifying potential targets for drug repurposing.
+Drug Retargeting  is a Python application that provides a Graphical User Interface (GUI) for analyzing drug-protein interactions and identifying potential targets for drug repurposing.
 
 ## Overview
 
