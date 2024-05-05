@@ -5,6 +5,10 @@ from PyQt5.QtGui import QFont
 from PyQt5 import QtGui, QtCore
 from collections import defaultdict
 from algo import *
+import csv
+
+
+
 
 class DrugRetargetingGUI(QMainWindow):
     def __init__(self):
@@ -74,6 +78,24 @@ class DrugRetargetingGUI(QMainWindow):
 
         # Apply button hover style
         self.apply_button_hover_style()
+        
+    def open_file_dialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_path, _ = QFileDialog.getOpenFileName(self, "Load Drug-Protein CSV", "", "CSV files (*.csv)", options=options)
+        if file_path:
+            self.load_csv_data(file_path)
+    def load_csv_data(self, file_path):
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                drug_name, protein1, effectiveness1, protein2, effectiveness2, protein3, effectiveness3 = row
+                self.drug_protein_data[drug_name] = {
+                    protein1: float(effectiveness1),
+                    protein2: float(effectiveness2),
+                    protein3: float(effectiveness3)
+                }
+        return self.drug_protein_data
 
     def apply_button_hover_style(self):
         # Red color when hovering over buttons
