@@ -1,12 +1,10 @@
-
-
 from collections import defaultdict
 
 class Node:
     def __init__(self, node_type, name):
         self.node_type = node_type
         self.name = name
-        self.connections = {}
+        self.connections = defaultdict(float)  # Using defaultdict to store effectiveness with default value 0.0
 
 def construct_drug_retargeting_graph(disease_protein_map, drug_protein_map):
     graph = {}
@@ -17,7 +15,8 @@ def construct_drug_retargeting_graph(disease_protein_map, drug_protein_map):
         for protein in proteins:
             if protein not in graph:
                 graph[protein] = Node("Protein", protein)
-            graph[disease].connections[protein] = 0
+            # Omitting the effectiveness value, since we want an unweighted graph
+            graph[disease].connections[protein] = 0.0
 
     for drug, protein_list in drug_protein_map.items():
         if drug not in graph:
@@ -25,26 +24,21 @@ def construct_drug_retargeting_graph(disease_protein_map, drug_protein_map):
         for protein, effectiveness in protein_list.items():
             if protein not in graph:
                 graph[protein] = Node("Protein", protein)
+            # Adding connection from protein to drug with effectiveness
+            graph[protein].connections[drug] = effectiveness
+            # Omitting the effectiveness value, since we want an unweighted graph
             graph[drug].connections[protein] = effectiveness
 
     return graph
 
-def find_potential_targets(graph, drug):
-    if drug not in graph:
-        return []
-    
-    targets = set()
-    visited_proteins = set()
-    drug_node = graph[drug]
-    
-    def dfs(node, weight_so_far):
-        if node.node_type == "Disease":
-            targets.add(node.name)
-            return
-        for protein, effectiveness in node.connections.items():
-            if protein not in visited_proteins:
-                visited_proteins.add(protein)
-                dfs(graph[protein], weight_so_far * effectiveness)
-    
-    dfs(drug_node, 1)
-    return list(targets)
+
+def find_potential_targets(graph, protein):
+    targets = {}
+
+    if protein in graph:
+        for connected_protein_name, effectiveness in graph[protein].connections.items():
+            connected_protein = graph[connected_protein_name]
+            if connected_protein.node_type == "Drug":
+                targets[connected_protein.name] = effectiveness
+
+    return targets

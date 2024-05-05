@@ -18,25 +18,14 @@ class DrugRetargetingGUI(QMainWindow):
 
         layout = QVBoxLayout()
 
-        # Disease-Protein Mappings Section
-        label_mappings = QLabel("Disease-Protein Mappings")
-        label_mappings.setStyleSheet("font-size: 14px; font-weight: bold;")
-        layout.addWidget(label_mappings)
-        self.disease_protein_layout = QVBoxLayout()
-        layout.addLayout(self.disease_protein_layout)
-        self.add_mapping_button = QPushButton("Add Mapping")
-        self.add_mapping_button.setStyleSheet("font-size: 12px;")
-        self.add_mapping_button.clicked.connect(self.add_disease_protein_mapping)
-        self.add_mapping_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        layout.addWidget(self.add_mapping_button)
+         # Protein Input Section
+        label_protein = QLabel("Enter Protein:")
+        label_protein.setStyleSheet("font-size: 14px; font-weight: bold;")
+        layout.addWidget(label_protein)
+        self.protein_line_edit = QLineEdit()
+        self.protein_line_edit.setStyleSheet("font-size: 12px;")
+        layout.addWidget(self.protein_line_edit)
 
-        # Drug Selection Section
-        label_drug = QLabel("Drug Selection")
-        label_drug.setStyleSheet("font-size: 14px; font-weight: bold;")
-        layout.addWidget(label_drug)
-        self.drug_combo_box = QComboBox()
-        self.drug_combo_box.setStyleSheet("font-size: 12px;")
-        layout.addWidget(self.drug_combo_box)
 
         # Potential Targets Section
         label_targets = QLabel("Potential Targets")
@@ -53,17 +42,35 @@ class DrugRetargetingGUI(QMainWindow):
         self.search_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         layout.addWidget(self.search_button)
 
-        # Load Drug-Protein CSV Button
-        self.load_csv_button = QPushButton("Load Drug-Protein CSV")
-        self.load_csv_button.setStyleSheet("font-size: 12px;")
-        self.load_csv_button.clicked.connect(self.load_csv_file)
-        self.load_csv_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        layout.addWidget(self.load_csv_button)
+        # # Load Drug-Protein CSV Button
+        # self.load_csv_button = QPushButton("Load Drug-Protein CSV")
+        # self.load_csv_button.setStyleSheet("font-size: 12px;")
+        # self.load_csv_button.clicked.connect(self.load_csv_file)
+        # self.load_csv_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        # layout.addWidget(self.load_csv_button)
 
         self.central_widget.setLayout(layout)
 
         # Initialize drug-protein data
-        self.drug_protein_data = {}
+        self.drug_protein_data = {
+            "Drug 1": {"Spike protein": 0.8, "ACE2 receptor": 0.7, "Beta-amyloid protein": 0.6},
+            "Drug 2": {"Tau protein": 0.9, "Beta-amyloid protein": 0.75, "Alpha-synuclein protein": 0.65},
+            "Drug 3": {"Insulin receptor": 0.85, "Glucose transporter": 0.7, "Dopamine receptor": 0.8},
+            "Drug 4": {"BRCA1 gene": 0.7, "HER2 protein": 0.9, "CD4 receptor": 0.8},
+            "Drug 5": {"Alpha-synuclein protein": 0.6, "Dopamine receptor": 0.85, "Vitamin D receptor": 0.8},
+            "Drug 6": {"CD4 receptor": 0.75, "HIV-1 gp120 protein": 0.8, "Vitamin D receptor": 0.9},
+            "Drug 7": {"Vitamin D receptor": 0.4, "Calcium-binding protein": 0.85, "Insulin receptor": 0.85}
+         }
+
+        self.disease_protein_map = {
+            "COVID-19": {"Spike protein", "ACE2 receptor"},
+            "Alzheimer's disease": {"Tau protein", "Beta-amyloid protein"},
+            "Type 2 diabetes": {"Insulin receptor", "Glucose transporter"},
+            "Breast cancer": {"BRCA1 gene", "HER2 protein"},
+            "Parkinson's disease": {"Alpha-synuclein protein", "Dopamine receptor"},
+            "HIV/AIDS": {"CD4 receptor", "HIV-1 gp120 protein"},
+            "Osteoporosis": {"Vitamin D receptor", "Calcium-binding protein"}
+        }
 
         # Apply button hover style
         self.apply_button_hover_style()
@@ -71,50 +78,27 @@ class DrugRetargetingGUI(QMainWindow):
     def apply_button_hover_style(self):
         # Red color when hovering over buttons
         hover_style = "QPushButton:hover { background-color: red; }"
-        self.add_mapping_button.setStyleSheet(hover_style)
+        # self.add_mapping_button.setStyleSheet(hover_style)
         self.search_button.setStyleSheet(hover_style)
-        self.load_csv_button.setStyleSheet(hover_style)
+        
 
-    def add_disease_protein_mapping(self):
-        disease_text_box = QLineEdit()
-        protein_text_box = QLineEdit()
-        layout = QHBoxLayout()
-        layout.addWidget(disease_text_box)
-        layout.addWidget(protein_text_box)
-        self.disease_protein_layout.addLayout(layout)
+   
 
     def search_potential_targets(self):
-        selected_drug = self.drug_combo_box.currentText()
-        graph = construct_drug_retargeting_graph(self.get_disease_protein_mappings(), self.drug_protein_data)
-        targets = find_potential_targets(graph, selected_drug)
+        protein = self.protein_line_edit.text()
+        graph = construct_drug_retargeting_graph(self.disease_protein_map, self.drug_protein_data)
+        targets = find_potential_targets(graph, protein)
         self.potential_targets_text_edit.clear()
-        self.potential_targets_text_edit.append("\n".join(targets))
+        for drug, effectiveness in targets.items():
+            self.potential_targets_text_edit.append(f"{drug}: {effectiveness}")
 
-    def get_disease_protein_mappings(self):
-        mappings = defaultdict(set)
-        for i in range(self.disease_protein_layout.count()):
-            layout = self.disease_protein_layout.itemAt(i)
-            disease = layout.itemAt(0).widget().text()
-            protein = layout.itemAt(1).widget().text()
-            mappings[disease].add(protein)
-        return mappings
 
-    def load_csv_file(self):
-        file_dialog = QFileDialog()
-        file_dialog.setNameFilter("CSV files (*.csv)")
-        if file_dialog.exec_():
-            file_name = file_dialog.selectedFiles()[0]
-            self.load_csv_data(file_name)
+    # def load_csv_file(self):
+    #     file_dialog = QFileDialog()
+    #     file_dialog.setNameFilter("CSV files (*.csv)")
+    #     if file_dialog.exec_():
+    #         file_name = file_dialog.selectedFiles()[0]
+    #         self.load_csv_data(file_name)
 
-    def load_csv_data(self, file_name):
-        # Here you would implement the logic to read the CSV file and populate self.drug_protein_data
-        # For simplicity, I'll just assume a sample data format
-        self.drug_protein_data = {
-            "Drug A": {"Protein A": 0.8, "Protein B": 0.7},
-            "Drug B": {"Protein B": 0.9, "Protein C": 0.6}
-        }
-        self.update_drug_combo_box()
 
-    def update_drug_combo_box(self):
-        self.drug_combo_box.clear()
-        self.drug_combo_box.addItems(self.drug_protein_data.keys())
+   
