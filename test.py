@@ -4,6 +4,7 @@ from PyQt5.QtGui import QFont
 from collections import defaultdict
 from PyQt5 import QtGui, QtCore
 import qdarkstyle
+from spellchecker import SpellChecker
 
 # Drug retargeting algorithm functions
 class Node:

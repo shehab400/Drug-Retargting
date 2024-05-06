@@ -1,11 +1,12 @@
 # gui.py
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QTextEdit, QLineEdit, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QTextEdit, QLineEdit, QFileDialog,QMessageBox
 from PyQt5.QtGui import QFont
 from PyQt5 import QtGui, QtCore
 from collections import defaultdict
 from algo import *
 import csv
+from spellchecker import SpellChecker
 
 class DrugRetargetingGUI(QMainWindow):
     def __init__(self):
@@ -19,6 +20,37 @@ class DrugRetargetingGUI(QMainWindow):
 
         layout = QVBoxLayout()
 
+        # Load Drug-Protein CSV Button
+        # Load Drug-Protein CSV Button
+        self.load_csv_button = QPushButton("Load Drug-Protein CSV")
+        self.load_csv_button.setStyleSheet("""
+            QPushButton {
+                font-size: 10px;  /* Smaller font size */
+                background-color: #4CAF50; /* Green */
+                border: none;
+                color: white;
+                padding: 2px 5px;  /* Smaller padding */
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                margin: 2px 1px;  /* Smaller margin */
+                cursor: pointer;
+            }
+
+            QPushButton:hover {
+                background-color: #45a049; /* Darker green */
+            }
+        """)
+        self.load_csv_button.clicked.connect(self.open_file_dialog)
+        self.load_csv_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+
+        # Create a horizontal layout to left-align the button
+        hlayout = QHBoxLayout()
+        hlayout.addWidget(self.load_csv_button)
+        hlayout.addStretch()
+
+        layout.addLayout(hlayout)
+
         # Protein Input Section
         label_protein = QLabel("Enter Protein:")
         label_protein.setStyleSheet("font-size: 14px; font-weight: bold;")
@@ -27,7 +59,9 @@ class DrugRetargetingGUI(QMainWindow):
         self.protein_line_edit.setStyleSheet("font-size: 12px;")
         layout.addWidget(self.protein_line_edit)
 
+        # ...
 
+        self.central_widget.setLayout(layout)
         # Potential Targets Section
         label_targets = QLabel("Potential Targets")
         label_targets.setStyleSheet("font-size: 14px; font-weight: bold;")
@@ -43,14 +77,6 @@ class DrugRetargetingGUI(QMainWindow):
         self.search_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         layout.addWidget(self.search_button)
 
-        # # Load Drug-Protein CSV Button
-        # self.load_csv_button = QPushButton("Load Drug-Protein CSV")
-        # self.load_csv_button.setStyleSheet("font-size: 12px;")
-        # self.load_csv_button.clicked.connect(self.load_csv_file)
-        # self.load_csv_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        # layout.addWidget(self.load_csv_button)
-
-        self.central_widget.setLayout(layout)
 
         # Initialize drug-protein data
         self.drug_protein_data = {
@@ -82,6 +108,7 @@ class DrugRetargetingGUI(QMainWindow):
         file_path, _ = QFileDialog.getOpenFileName(self, "Load Drug-Protein CSV", "", "CSV files (*.csv)", options=options)
         if file_path:
             self.load_csv_data(file_path)
+            
     def load_csv_data(self, file_path):
         with open(file_path, 'r') as file:
             reader = csv.reader(file)
@@ -103,6 +130,27 @@ class DrugRetargetingGUI(QMainWindow):
     def search_potential_targets(self):
         protein = self.protein_line_edit.text()
         graph = construct_drug_retargeting_graph(self.disease_protein_map, self.drug_protein_data)
+
+        # Create a spell checker and give it the list of correct protein names
+        spell = SpellChecker(language=None, case_sensitive=True)
+        all_proteins = set(protein for proteins in self.drug_protein_data.values() for protein in proteins)
+        spell.word_frequency.load_words(all_proteins)
+
+        # Check the spelling of the entered protein
+        misspelled = spell.unknown([protein])
+        for word in misspelled:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText(f"Did you mean {spell.correction(word)}?")
+            msg.setWindowTitle("Spelling Suggestion")
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            retval = msg.exec_()
+            if retval == QMessageBox.Ok:
+                self.protein_line_edit.setText(spell.correction(word))
+                protein = self.protein_line_edit.text()
+            else:
+                return  # Exit the function if user clicked Cancel
+
         targets = find_potential_targets(graph, protein)
         self.potential_targets_text_edit.clear()
         if not targets:
@@ -116,7 +164,6 @@ class DrugRetargetingGUI(QMainWindow):
         else:
             for drug, effectiveness in targets.items():
                 self.potential_targets_text_edit.append(f"{drug}: {effectiveness}")
-
 
     # def load_csv_file(self):
     #     file_dialog = QFileDialog()
