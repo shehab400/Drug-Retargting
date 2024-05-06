@@ -1,4 +1,5 @@
 from collections import defaultdict
+from PyQt5.QtWidgets import QMessageBox
 
 class Node:
     def __init__(self, node_type, name):
@@ -40,5 +41,7 @@ def find_potential_targets(graph, protein):
             connected_protein = graph[connected_protein_name]
             if connected_protein.node_type == "Drug":
                 targets[connected_protein.name] = effectiveness
+
+
 
     return targets

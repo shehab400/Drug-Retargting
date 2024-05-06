@@ -7,9 +7,6 @@ from collections import defaultdict
 from algo import *
 import csv
 
-
-
-
 class DrugRetargetingGUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -22,7 +19,7 @@ class DrugRetargetingGUI(QMainWindow):
 
         layout = QVBoxLayout()
 
-         # Protein Input Section
+        # Protein Input Section
         label_protein = QLabel("Enter Protein:")
         label_protein.setStyleSheet("font-size: 14px; font-weight: bold;")
         layout.addWidget(label_protein)
@@ -64,7 +61,7 @@ class DrugRetargetingGUI(QMainWindow):
             "Drug 5": {"Alpha-synuclein protein": 0.6, "Dopamine receptor": 0.85, "Vitamin D receptor": 0.8},
             "Drug 6": {"CD4 receptor": 0.75, "HIV-1 gp120 protein": 0.8, "Vitamin D receptor": 0.9},
             "Drug 7": {"Vitamin D receptor": 0.4, "Calcium-binding protein": 0.85, "Insulin receptor": 0.85}
-         }
+        }
 
         self.disease_protein_map = {
             "COVID-19": {"Spike protein", "ACE2 receptor"},
@@ -103,16 +100,22 @@ class DrugRetargetingGUI(QMainWindow):
         # self.add_mapping_button.setStyleSheet(hover_style)
         self.search_button.setStyleSheet(hover_style)
         
-
-   
-
     def search_potential_targets(self):
         protein = self.protein_line_edit.text()
         graph = construct_drug_retargeting_graph(self.disease_protein_map, self.drug_protein_data)
         targets = find_potential_targets(graph, protein)
         self.potential_targets_text_edit.clear()
-        for drug, effectiveness in targets.items():
-            self.potential_targets_text_edit.append(f"{drug}: {effectiveness}")
+        if not targets:
+            self.potential_targets_text_edit.clear()
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText('No potential targets found for the given protein.')
+            msg.setWindowTitle("Error")
+            msg.exec_()
+        else:
+            for drug, effectiveness in targets.items():
+                self.potential_targets_text_edit.append(f"{drug}: {effectiveness}")
 
 
     # def load_csv_file(self):
